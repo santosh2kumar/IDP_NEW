@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nasa-rf-test
+  namespace: default
+  labels:
+    name: nasa-rf-test
+spec:
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: nasa-rf-test
+  capacity:
+    storage: 5Gi
+  csi:
+    nodePublishSecretRef:
+      name: "mapr-ticket-secret"
+      namespace: "default"
+    driver: com.mapr.csi-kdf
+    volumeHandle: nasa-rf-test
+    volumeAttributes:
+      volumePath: "/nasadata"
+      cluster: "hpe-epa-datapipeline.cluster.com"
+      cldbHosts: "172.30.214.1"
+      securityType: "secure"
+      platinum: "false"
+      replication: "1"

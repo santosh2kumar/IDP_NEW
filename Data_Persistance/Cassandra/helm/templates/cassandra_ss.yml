@@ -1,0 +1,125 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cassandra
+  name: cassandra
+spec:
+  clusterIP: None
+  ports:
+    - port: 9042
+  selector:
+    app: cassandra
+---
+apiVersion: "apps/v1"
+kind: StatefulSet
+metadata:
+  name: cassandra
+spec:
+  serviceName: cassandra
+  replicas: {{ .Values.cassandraReplicas }}
+  selector:
+    matchLabels:
+      app: cassandra
+  template:
+    metadata:
+      labels:
+        app: cassandra
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+{{ toYaml .Values.nodes | indent 16 }}
+      containers:
+      - name: cassandra
+        image: {{ .Values.image }}
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          seLinuxOptions:
+            level: "s0:c123,c456"
+          readOnlyRootFilesystem: true
+        ports:
+        - containerPort: 7000
+          name: intra-node
+        - containerPort: 7001
+          name: tls-intra-node
+        - containerPort: 7199
+          name: jmx
+        - containerPort: 9042
+          name: cql
+        resources:
+          limits:
+            cpu: {{ .Values.resources.cpu }}
+            memory: {{ .Values.resources.memory }}
+          requests:
+            cpu: {{ .Values.resources.cpu }}
+            memory: {{ .Values.resources.memory }}
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "PID=$(pidof java) && kill $PID && while ps -p $PID > /dev/null; do sleep 1; done"]
+        env:
+          - name: MAX_HEAP_SIZE
+            value: {{ .Values.MAX_HEAP_SIZE }}
+          - name: HEAP_NEWSIZE
+            value: {{ .Values.HEAP_NEWSIZE }}
+          - name: CASSANDRA_SEEDS
+            value: "cassandra-0.cassandra.default.svc.cluster.local"
+          - name: CASSANDRA_CLUSTER_NAME
+            value: "{{ .Values.CASSANDRA_CLUSTER_NAME }}"
+          - name: CASSANDRA_DC
+            value: "{{ .Values.CASSANDRA_DC }}"
+          - name: CASSANDRA_RACK
+            value: "{{ .Values.CASSANDRA_RACK }}"
+          - name: CASSANDRA_AUTO_BOOTSTRAP
+            value: "false"
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - /ready-probe.sh
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        # These volume mounts are persistent. They are like inline claims,
+        # but not exactly because the names need to match exactly one of
+        # the stateful pod volumes.
+        volumeMounts:
+        - name: cassandra-data
+          mountPath: /var/lib/cassandra
+#      securityContext:
+#        runAsUser: 1000
+#        fsGroup: 1000
+  # These are converted to volume claims by the controller
+  # and mounted at the paths mentioned above.
+  volumeClaimTemplates:
+  - metadata:
+      name: cassandra-data
+      namespace: default
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: cassandrasc
+      resources:
+        requests:
+          storage: {{ .Values.resources.storage }}
+---
+

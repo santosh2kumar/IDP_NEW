@@ -1,0 +1,78 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  serviceName: grafana-headless
+  replicas: {{ .Values.grafanaReplicas }}
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      name: grafana
+      labels:
+        app: grafana
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+{{ toYaml .Values.nodes | indent 16 }}
+      containers:
+      - name: grafana
+        image: {{ .Values.image }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          seLinuxOptions:
+            level: "s0:c123,c456"
+#          readOnlyRootFilesystem: true
+        ports:
+        - name: grafana
+          containerPort: 3000
+        env:
+        - name: GF_INSTALL_PLUGINS
+          value : "{{ .Values.plugins }}"
+        - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
+          value : "{{ .Values.unsigned }}"
+        resources:
+          limits:
+            memory: "{{ .Values.resources.memory }}"
+            cpu: "{{ .Values.resources.cpu }}"
+          requests: 
+            memory: "{{ .Values.resources.memory }}"
+            cpu: "{{ .Values.resources.cpu }}"
+        volumeMounts:
+          - mountPath: /var/lib/grafana
+            name: grafana-mapr
+            readOnly: false
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+  volumeClaimTemplates:
+  - metadata:
+      name: grafana-mapr
+      namespace: default
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: grafanasc
+      resources:
+        requests:
+          storage: {{ .Values.resources.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-headless
+spec:
+  clusterIP: None
+  selector:
+    app: grafana

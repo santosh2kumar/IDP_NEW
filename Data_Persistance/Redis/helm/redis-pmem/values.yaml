@@ -1,0 +1,10 @@
+redisReplicas: 6
+image: redis:5.0.1-alpine
+resources:
+  storage: 10Gi
+  redismemory: 10Gi
+  rediscpu: 1000m
+nodes:
+- wn01
+- wn02
+- wn03

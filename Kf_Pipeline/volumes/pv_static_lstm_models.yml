@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nasavolmodels
+  namespace: default
+  labels:
+    name: nasavolmodels
+spec:
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: nasavolmodels
+  capacity:
+    storage: 20Gi
+  csi:
+    nodePublishSecretRef:
+      name: "mapr-ticket-secret"
+      namespace: "default"
+    driver: com.mapr.csi-kdf
+    volumeHandle: nasavolmodels
+    volumeAttributes:
+      volumePath: "/lstm_models"
+      cluster: "hpe-epa-datapipeline.cluster.com"
+      cldbHosts: "172.30.214.1"
+      securityType: "secure"
+      platinum: "false"
+      replication: "1"

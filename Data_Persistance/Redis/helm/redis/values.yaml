@@ -1,0 +1,17 @@
+redisReplicas: 6
+image: redis:5.0.1-alpine
+resources:
+  storage: 10Gi
+  redismemory: 10Gi
+  rediscpu: 1000m
+nodes:
+- wn01
+- wn02
+- wn03
+secrets:
+  maprUserSecret: "mapr-provisioner-secrets"
+  maprClusterSecret: "mapr-ticket-secret"
+restServers: "172.30.214.1:8443"
+cldbHosts: "172.30.214.1:7222"
+cluster: "hpe-epa-datapipeline.cluster.com"
+replication: 1

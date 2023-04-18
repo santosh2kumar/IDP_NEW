@@ -1,0 +1,13 @@
+from cassandra.cluster import Cluster
+cluster = Cluster(['cassandra'], port=9042, control_connection_timeout=None)
+session = cluster.connect()
+print(session.execute("SELECT release_version FROM system.local").one())
+session.execute("CREATE KEYSPACE ex WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 3}")
+session.execute("USE ex")
+session.execute("CREATE TABLE emp(emp_id int PRIMARY KEY, emp_name text)")
+session.execute("INSERT INTO emp (emp_id, emp_name) VALUES(1,'ram')")
+>>> rows = session.execute("select * from emp")
+>>> for row in rows:
+...     print(row.emp_id, row.emp_name)
+
+

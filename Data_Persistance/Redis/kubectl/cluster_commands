@@ -1,0 +1,6 @@
+kubectl get pods -l app=redis-cluster -o jsonpath='{range.items[*]}{.status.podIP}:6379 '
+
+kubectl exec -it redis-cluster-0  -- /bin/sh -c "redis-cli -h 127.0.0.1 -p 6379 --cluster create 10.233.92.25:6379 10.233.105.28:6379 10.233.96.27:6379 10.233.105.29:6379 10.233.92.26:6379 10.233.96.28:6379"
+
+kubectl exec -it redis-cluster-0  -- /bin/sh -c "redis-cli -h 127.0.0.1 -p 6379 cluster info"
+

@@ -1,0 +1,60 @@
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: kafka-producer
+  labels:
+    app: kafka-producer
+spec:
+  serviceName: kafka-producer-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      component: kafka-producer
+  template:
+    metadata:
+      labels:
+        component: kafka-producer
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+                - wn01
+      containers:
+        - name: kafka-producer
+          image: sachin944/nasa_pa:KafkaProducerappV2
+          securityContext:
+            allowPrivilegeEscalation: false
+            seLinuxOptions:
+              level: "s0:c123,c456"
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 10Gi
+          volumeMounts:
+          - name: kafka-producer-mapr
+            mountPath: /mnt
+            readOnly: false
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      volumes:
+        - name: kafka-producer-mapr
+          persistentVolumeClaim:
+            claimName: producer-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-producer-headless
+spec:
+  clusterIP: None
+  selector:
+    component: kafka-producer
+

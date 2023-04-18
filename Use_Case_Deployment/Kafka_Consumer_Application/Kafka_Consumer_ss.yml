@@ -1,0 +1,69 @@
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: kafka-consumer
+  labels:
+    app: kafka-consumer
+spec:
+  serviceName: kafka-consumer-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      component: kafka-consumer
+  template:
+    metadata:
+      labels:
+        component: kafka-consumer
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+                - wn03
+                - wn04
+                - wn05
+      containers:
+        - name: spark-master
+          image: sachin944/nasa_pa:KafkaConsumerappV3
+          securityContext:
+            allowPrivilegeEscalation: false
+            seLinuxOptions:
+              level: "s0:c123,c456"
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 10Gi
+          volumeMounts:
+          - name: kafka-consumer-mapr
+            mountPath: /mnt
+            readOnly: false
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-consumer-mapr
+      namespace: default
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: consumersc
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-consumer-headless
+spec:
+  clusterIP: None
+  selector:
+    component: kafka-consumer
+

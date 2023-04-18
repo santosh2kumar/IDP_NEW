@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: producervol
+  namespace: default
+  labels:
+    name: producervol
+spec:
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: producersc
+  capacity:
+    storage: 5Gi
+  csi:
+    nodePublishSecretRef:
+      name: "mapr-ticket-secret"
+      namespace: "default"
+    driver: com.mapr.csi-kdf
+    volumeHandle: producervol
+    volumeAttributes:
+      volumePath: "/kafka_producer"
+      cluster: "hpe-epa-datapipeline.cluster.com"
+      cldbHosts: "172.30.214.1"
+      securityType: "secure"
+      platinum: "false"
+      replication: "1"
+

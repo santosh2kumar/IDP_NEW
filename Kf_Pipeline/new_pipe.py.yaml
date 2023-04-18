@@ -1,0 +1,239 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: nasa-turbo-engine-failure-prediction-pipeline-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline_compilation_time: '2021-05-31T13:23:24.362533',
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "Builds 3 Regression Models
+      to predict the RUL of Nasa Turbo Engines", "name": "Nasa Turbo Engine Failure
+      Prediction Pipeline"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2}
+spec:
+  entrypoint: nasa-turbo-engine-failure-prediction-pipeline
+  templates:
+  - name: nasa-turbo-engine-failure-prediction-pipeline
+    dag:
+      tasks:
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns, template: preprocess-data-to-calculate-rul-and-remove-useless-columns}
+      - name: preprocess-train-test-data
+        template: preprocess-train-test-data
+        dependencies: [preprocess-data-to-calculate-rul-and-remove-useless-columns]
+        arguments:
+          artifacts:
+          - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-fd_001_test,
+            from: '{{tasks.preprocess-data-to-calculate-rul-and-remove-useless-columns.outputs.artifacts.preprocess-data-to-calculate-rul-and-remove-useless-columns-fd_001_test}}'}
+          - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-train_df,
+            from: '{{tasks.preprocess-data-to-calculate-rul-and-remove-useless-columns.outputs.artifacts.preprocess-data-to-calculate-rul-and-remove-useless-columns-train_df}}'}
+      - name: preprocess-train-test-data-and-generate-sequence-for-lstm
+        template: preprocess-train-test-data-and-generate-sequence-for-lstm
+        dependencies: [preprocess-data-to-calculate-rul-and-remove-useless-columns]
+        arguments:
+          artifacts:
+          - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-RUL,
+            from: '{{tasks.preprocess-data-to-calculate-rul-and-remove-useless-columns.outputs.artifacts.preprocess-data-to-calculate-rul-and-remove-useless-columns-RUL}}'}
+          - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-fd_001_test,
+            from: '{{tasks.preprocess-data-to-calculate-rul-and-remove-useless-columns.outputs.artifacts.preprocess-data-to-calculate-rul-and-remove-useless-columns-fd_001_test}}'}
+          - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-train_df,
+            from: '{{tasks.preprocess-data-to-calculate-rul-and-remove-useless-columns.outputs.artifacts.preprocess-data-to-calculate-rul-and-remove-useless-columns-train_df}}'}
+          - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-unit_number,
+            from: '{{tasks.preprocess-data-to-calculate-rul-and-remove-useless-columns.outputs.artifacts.preprocess-data-to-calculate-rul-and-remove-useless-columns-unit_number}}'}
+      - name: test-lstm
+        template: test-lstm
+        dependencies: [preprocess-train-test-data-and-generate-sequence-for-lstm,
+          train-lstm-rnn]
+        arguments:
+          artifacts:
+          - {name: preprocess-train-test-data-and-generate-sequence-for-lstm-test_df,
+            from: '{{tasks.preprocess-train-test-data-and-generate-sequence-for-lstm.outputs.artifacts.preprocess-train-test-data-and-generate-sequence-for-lstm-test_df}}'}
+          - {name: train-lstm-rnn-model_lstm, from: '{{tasks.train-lstm-rnn.outputs.artifacts.train-lstm-rnn-model_lstm}}'}
+      - name: test-random-forest-regressor
+        template: test-random-forest-regressor
+        dependencies: [preprocess-train-test-data, train-random-forest-regressor]
+        arguments:
+          artifacts:
+          - {name: preprocess-train-test-data-X_001_test, from: '{{tasks.preprocess-train-test-data.outputs.artifacts.preprocess-train-test-data-X_001_test}}'}
+          - {name: train-random-forest-regressor-model_rf, from: '{{tasks.train-random-forest-regressor.outputs.artifacts.train-random-forest-regressor-model_rf}}'}
+      - name: test-xgboost-regressor
+        template: test-xgboost-regressor
+        dependencies: [preprocess-train-test-data, train-xgboost-regressor]
+        arguments:
+          artifacts:
+          - {name: preprocess-train-test-data-X_001_test, from: '{{tasks.preprocess-train-test-data.outputs.artifacts.preprocess-train-test-data-X_001_test}}'}
+          - {name: train-xgboost-regressor-model_xgb, from: '{{tasks.train-xgboost-regressor.outputs.artifacts.train-xgboost-regressor-model_xgb}}'}
+      - name: train-lstm-rnn
+        template: train-lstm-rnn
+        dependencies: [preprocess-train-test-data-and-generate-sequence-for-lstm]
+        arguments:
+          artifacts:
+          - {name: preprocess-train-test-data-and-generate-sequence-for-lstm-label_array,
+            from: '{{tasks.preprocess-train-test-data-and-generate-sequence-for-lstm.outputs.artifacts.preprocess-train-test-data-and-generate-sequence-for-lstm-label_array}}'}
+          - {name: preprocess-train-test-data-and-generate-sequence-for-lstm-seq_array,
+            from: '{{tasks.preprocess-train-test-data-and-generate-sequence-for-lstm.outputs.artifacts.preprocess-train-test-data-and-generate-sequence-for-lstm-seq_array}}'}
+      - name: train-random-forest-regressor
+        template: train-random-forest-regressor
+        dependencies: [preprocess-train-test-data]
+        arguments:
+          artifacts:
+          - {name: preprocess-train-test-data-X, from: '{{tasks.preprocess-train-test-data.outputs.artifacts.preprocess-train-test-data-X}}'}
+          - {name: preprocess-train-test-data-Y, from: '{{tasks.preprocess-train-test-data.outputs.artifacts.preprocess-train-test-data-Y}}'}
+      - name: train-xgboost-regressor
+        template: train-xgboost-regressor
+        dependencies: [preprocess-train-test-data]
+        arguments:
+          artifacts:
+          - {name: preprocess-train-test-data-X, from: '{{tasks.preprocess-train-test-data.outputs.artifacts.preprocess-train-test-data-X}}'}
+          - {name: preprocess-train-test-data-Y, from: '{{tasks.preprocess-train-test-data.outputs.artifacts.preprocess-train-test-data-Y}}'}
+  - name: preprocess-data-to-calculate-rul-and-remove-useless-columns
+    container:
+      args: []
+      image: sachin944/nasa_pa:step1_rulv4
+      volumeMounts:
+      - {mountPath: /mnt, name: pvolume-f647d6c66dcb780b638f2f8a76f0b40602fc7ae94ac435f64649f25}
+    outputs:
+      artifacts:
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-RUL, path: /app/RUL.csv}
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-fd_001_test,
+        path: /app/fd_001_test.csv}
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-train_df,
+        path: /app/train_df.csv}
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-unit_number,
+        path: /app/unit_number.csv}
+    metadata:
+      labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline-sdk-type: kfp}
+    volumes:
+    - name: pvolume-f647d6c66dcb780b638f2f8a76f0b40602fc7ae94ac435f64649f25
+      persistentVolumeClaim: {claimName: datavol}
+  - name: preprocess-train-test-data
+    container:
+      args: [--train_df, /tmp/inputs/input-0/data, --fd_001_test, /tmp/inputs/input-1/data]
+      image: sachin944/nasa_pa:step2_rf_xgbv2
+    inputs:
+      artifacts:
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-train_df,
+        path: /tmp/inputs/input-0/data}
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-fd_001_test,
+        path: /tmp/inputs/input-1/data}
+    outputs:
+      artifacts:
+      - {name: preprocess-train-test-data-X, path: /app/X.npy}
+      - {name: preprocess-train-test-data-X_001_test, path: /app/X_001_test.npy}
+      - {name: preprocess-train-test-data-Y, path: /app/Y.npy}
+    metadata:
+      labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline-sdk-type: kfp}
+  - name: preprocess-train-test-data-and-generate-sequence-for-lstm
+    container:
+      args: [--train_df, /tmp/inputs/input-0/data, --fd_001_test, /tmp/inputs/input-1/data,
+        --unit_number, /tmp/inputs/input-2/data, --RUL, /tmp/inputs/input-3/data]
+      image: sachin944/nasa_pa:step2_lstmv1
+    inputs:
+      artifacts:
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-train_df,
+        path: /tmp/inputs/input-0/data}
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-fd_001_test,
+        path: /tmp/inputs/input-1/data}
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-unit_number,
+        path: /tmp/inputs/input-2/data}
+      - {name: preprocess-data-to-calculate-rul-and-remove-useless-columns-RUL, path: /tmp/inputs/input-3/data}
+    outputs:
+      artifacts:
+      - {name: preprocess-train-test-data-and-generate-sequence-for-lstm-label_array,
+        path: /app/label_array.npy}
+      - {name: preprocess-train-test-data-and-generate-sequence-for-lstm-seq_array,
+        path: /app/seq_array.npy}
+      - {name: preprocess-train-test-data-and-generate-sequence-for-lstm-test_df,
+        path: /app/test_df.csv}
+    metadata:
+      labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline-sdk-type: kfp}
+  - name: test-lstm
+    container:
+      args: [--model_lstm, /tmp/inputs/input-0/data, --test_df, /tmp/inputs/input-1/data]
+      image: sachin944/nasa_pa:step4_lstmv1
+      resources:
+        limits: {nvidia.com/gpu: 1}
+    inputs:
+      artifacts:
+      - {name: train-lstm-rnn-model_lstm, path: /tmp/inputs/input-0/data}
+      - {name: preprocess-train-test-data-and-generate-sequence-for-lstm-test_df,
+        path: /tmp/inputs/input-1/data}
+    metadata:
+      labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline-sdk-type: kfp}
+  - name: test-random-forest-regressor
+    container:
+      args: [--model_rf, /tmp/inputs/input-0/data, --X_001_test, /tmp/inputs/input-1/data]
+      image: sachin944/nasa_pa:step4_rfv1
+      volumeMounts:
+      - {mountPath: /mnt, name: pvolume-4facef567d63974c739af5323384845a6f489b8c93b3effdcc7d4b5}
+    inputs:
+      artifacts:
+      - {name: train-random-forest-regressor-model_rf, path: /tmp/inputs/input-0/data}
+      - {name: preprocess-train-test-data-X_001_test, path: /tmp/inputs/input-1/data}
+    metadata:
+      labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline-sdk-type: kfp}
+    volumes:
+    - name: pvolume-4facef567d63974c739af5323384845a6f489b8c93b3effdcc7d4b5
+      persistentVolumeClaim: {claimName: datavolrf}
+  - name: test-xgboost-regressor
+    container:
+      args: [--model_xgb, /tmp/inputs/input-0/data, --X_001_test, /tmp/inputs/input-1/data]
+      image: sachin944/nasa_pa:step4_xgbv1
+      volumeMounts:
+      - {mountPath: /mnt, name: pvolume-994071df1c1fd27510785a75be862f2227c897b51f9c3e371b712e5}
+    inputs:
+      artifacts:
+      - {name: train-xgboost-regressor-model_xgb, path: /tmp/inputs/input-0/data}
+      - {name: preprocess-train-test-data-X_001_test, path: /tmp/inputs/input-1/data}
+    metadata:
+      labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline-sdk-type: kfp}
+    volumes:
+    - name: pvolume-994071df1c1fd27510785a75be862f2227c897b51f9c3e371b712e5
+      persistentVolumeClaim: {claimName: datavolxgb}
+  - name: train-lstm-rnn
+    container:
+      args: [--seq_array, /tmp/inputs/input-0/data, --label_array, /tmp/inputs/input-1/data]
+      image: sachin944/nasa_pa:step3_lstmv2
+      resources:
+        limits: {nvidia.com/gpu: 1}
+      volumeMounts:
+      - {mountPath: /mnt, name: pvolume-8cc366d695725cd9ca16bbc4f1d2cd1c9848b99331c3e664450134b}
+    inputs:
+      artifacts:
+      - {name: preprocess-train-test-data-and-generate-sequence-for-lstm-seq_array,
+        path: /tmp/inputs/input-0/data}
+      - {name: preprocess-train-test-data-and-generate-sequence-for-lstm-label_array,
+        path: /tmp/inputs/input-1/data}
+    outputs:
+      artifacts:
+      - {name: train-lstm-rnn-model_lstm, path: /app/last_model.h5}
+    metadata:
+      labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline-sdk-type: kfp}
+    volumes:
+    - name: pvolume-8cc366d695725cd9ca16bbc4f1d2cd1c9848b99331c3e664450134b
+      persistentVolumeClaim: {claimName: datavolmodels}
+  - name: train-random-forest-regressor
+    container:
+      args: [--X, /tmp/inputs/input-0/data, --Y, /tmp/inputs/input-1/data]
+      image: sachin944/nasa_pa:step3_rfv1
+    inputs:
+      artifacts:
+      - {name: preprocess-train-test-data-X, path: /tmp/inputs/input-0/data}
+      - {name: preprocess-train-test-data-Y, path: /tmp/inputs/input-1/data}
+    outputs:
+      artifacts:
+      - {name: train-random-forest-regressor-model_rf, path: /app/model_rf.pickle}
+    metadata:
+      labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline-sdk-type: kfp}
+  - name: train-xgboost-regressor
+    container:
+      args: [--X, /tmp/inputs/input-0/data, --Y, /tmp/inputs/input-1/data]
+      image: sachin944/nasa_pa:step3_xgbv1
+    inputs:
+      artifacts:
+      - {name: preprocess-train-test-data-X, path: /tmp/inputs/input-0/data}
+      - {name: preprocess-train-test-data-Y, path: /tmp/inputs/input-1/data}
+    outputs:
+      artifacts:
+      - {name: train-xgboost-regressor-model_xgb, path: /app/model_xgb.pickle}
+    metadata:
+      labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.6.2, pipelines.kubeflow.org/pipeline-sdk-type: kfp}
+  arguments:
+    parameters: []
+  serviceAccountName: pipeline-runner

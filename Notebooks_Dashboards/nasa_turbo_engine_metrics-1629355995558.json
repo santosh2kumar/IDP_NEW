@@ -1,0 +1,217 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 2,
+  "iteration": 1629355935639,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Redis",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "showHeader": true
+      },
+      "pluginVersion": "7.4.1",
+      "targets": [
+        {
+          "command": "hgetall",
+          "keyName": "$Engine",
+          "query": "",
+          "refId": "A",
+          "type": "command"
+        }
+      ],
+      "title": "Engine Info",
+      "transformations": [],
+      "type": "table"
+    },
+    {
+      "datasource": "Apache Cassandra",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-RdYlGr"
+          },
+          "custom": {},
+          "mappings": [],
+          "max": 100,
+          "min": 20,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "7.4.1",
+      "targets": [
+        {
+          "columnId": " ",
+          "columnTime": " ",
+          "columnValue": " ",
+          "filtering": true,
+          "rawQuery": true,
+          "refId": "engine rul query",
+          "target": "select engine, CAST(rul as double) as rul, recorded_date from nasa.engine_details where rul<$Threshold ALLOW FILTERING;",
+          "type": "timeserie"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Engine RUL",
+      "transformations": [],
+      "type": "gauge"
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "engine0",
+          "value": "engine0"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Engine",
+        "multi": false,
+        "name": "Engine",
+        "options": [
+          {
+            "selected": true,
+            "text": "engine0",
+            "value": "engine0"
+          },
+          {
+            "selected": false,
+            "text": "engine1",
+            "value": "engine1"
+          },
+          {
+            "selected": false,
+            "text": "engine2",
+            "value": "engine2"
+          },
+          {
+            "selected": false,
+            "text": "engine3",
+            "value": "engine3"
+          },
+          {
+            "selected": false,
+            "text": "engine4",
+            "value": "engine4"
+          }
+        ],
+        "query": "engine0,engine1,engine2,engine3,engine4",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "120",
+          "value": "120"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "label": "Threshold",
+        "name": "Threshold",
+        "options": [
+          {
+            "selected": true,
+            "text": "120",
+            "value": "120"
+          }
+        ],
+        "query": "120",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "nasa_turbo_engine_metrics",
+  "uid": "33qO6tknk",
+  "version": 3
+}

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nasadep
+spec:
+  selector:
+    matchLabels:
+      app: nasadlmodel
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nasadlmodel
+    spec:
+     affinity:
+       nodeAffinity:
+         requiredDuringSchedulingIgnoredDuringExecution:
+           nodeSelectorTerms:
+           - matchExpressions:
+             - key: nodetype
+               operator: In
+               values:
+               - gpuwn01
+               - gpuwn02
+     containers:
+     - name: nasadlmodel
+       image: sachin944/nasa_pa:modelV1
+       imagePullPolicy: IfNotPresent
+       resources:
+         requests:
+           cpu: 2000m
+           memory: 10Gi
+       securityContext:
+         allowPrivilegeEscalation: false
+         seLinuxOptions:
+           level: "s0:c123,c456"
+#         readOnlyRootFilesystem: true
+       ports:
+       - containerPort: 8080
+       - containerPort: 5000
+     securityContext:
+       runAsUser: 1000
+       fsGroup: 1000
+
