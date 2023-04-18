@@ -1,0 +1,55 @@
+pyspark --conf spark.driver.port=40694 --conf spark.driver.host=spark-driver --conf spark.cassandra.connection.host=cassandra --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.1,com.datastax.spark:spark-cassandra-connector_2.12:3.0.1 --conf spark.sql.extensions=com.datastax.spark.connector.CassandraSparkExtensions
+
+from rediscluster import RedisCluster
+startup_nodes = [{"host": "redis-cluster", "port": "6379"}]
+rc = RedisCluster(startup_nodes=startup_nodes, decode_responses=True)
+
+>>> words = 'the quick brown fox jumps over the\
+...         lazy dog the quick brown fox jumps over the lazy dog'
+>>> seq = words.split()
+>>> data = sc.parallelize(seq)
+>>> counts = data.map(lambda word: (word, 1)).reduceByKey(lambda a, b: a + b).collect()
+>>> dict(counts)
+{'brown': 2, 'lazy': 2, 'over': 2, 'fox': 2, 'dog': 2, 'quick': 2, 'the': 4, 'jumps': 2}
+>>> rc.mset(dict(counts))
+True
+>>> rc.get("over")
+
+df = spark.readStream.format("kafka").option("kafka.bootstrap.servers", "kafka-svc:9093").option("subscribe", "messages").option("startingOffsets", "earliest").load()
+
+df = df.selectExpr("CAST(key AS STRING)","CAST(value AS STRING)")
+
+df.writeStream.format("console").start()
+
+from kafka import KafkaConsumer
+>>> consumer = KafkaConsumer('msg',bootstrap_servers=['kafka-svc:9093'])
+>>> for message in consumer:
+...     message = message.value
+...     print(message)
+
+>>> from kafka import KafkaProducer
+>>> producer = KafkaProducer(bootstrap_servers=['kafka-svc:9093'])
+>>> producer.send('msg', value='hello')
+
+rc.mset(counts)
+
+
+from pyspark.sql.functions import explode
+from pyspark.sql.functions import split
+lines = spark.readStream.format("kafka").option("kafka.bootstrap.servers", "kafka-svc:9093").option("subscribe", "msgtest").option("startingOffsets", "earliest").load()
+words = lines.select(explode(split(lines.value, " ")).alias("word"))
+wordCounts = words.groupBy("word").count()
+>>> query = wordCounts.writeStream.outputMode("complete").format("console").start()
+
+def writeToCassandra(writeDF, epochId):
+    writeDF.write \
+    .format("org.apache.spark.sql.cassandra") \
+    .options(table="wc", keyspace="ex") \
+    .mode("append") \
+    .save()
+	
+query = wordCounts.writeStream \
+.trigger(processingTime="5 seconds") \
+.outputMode("update") \
+.foreachBatch(writeToCassandra) \
+.start()

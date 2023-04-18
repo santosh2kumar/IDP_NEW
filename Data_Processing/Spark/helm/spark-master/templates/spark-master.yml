@@ -1,0 +1,73 @@
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: spark-master
+  labels:
+    app: spark-master
+spec:
+  serviceName: spark-master-headless
+  replicas: {{ .Values.sparkReplicas }}
+  selector:
+    matchLabels:
+      component: spark-master
+  template:
+    metadata:
+      labels:
+        component: spark-master
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+{{ toYaml .Values.nodes | indent 16 }}
+      containers:
+        - name: spark-master
+          image: {{ .Values.image }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            seLinuxOptions:
+              level: "s0:c123,c456"
+#            readOnlyRootFilesystem: true
+          command: ["/spark-master"]
+          ports:
+            - containerPort: 7077
+            - containerPort: 8080
+            - containerPort: 4040
+            - containerPort: 40694
+          resources:
+            requests:
+              cpu: {{ .Values.resources.cpu }}
+              memory: {{ .Values.resources.memory }}
+          volumeMounts:
+          - name: spark-master-mapr
+            mountPath: /mnt
+            readOnly: false
+#      securityContext:
+#        runAsUser: 1000
+#        fsGroup: 1000
+  volumeClaimTemplates:
+  - metadata:
+      name: spark-master-mapr
+      namespace: default
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: sparksc
+      resources:
+        requests:
+          storage: {{ .Values.resources.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-master-headless
+spec:
+  clusterIP: None
+  selector:
+    component: spark-master
+

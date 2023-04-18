@@ -1,0 +1,72 @@
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: spark-worker
+  labels:
+    app: spark-worker
+spec:
+  serviceName: spark-worker-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      component: spark-worker
+  template:
+    metadata:
+      labels:
+        component: spark-worker
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+                - wn02
+                - wn03
+      containers:
+        - name: spark-worker
+          image: sachin944/spark:9.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            seLinuxOptions:
+              level: "s0:c123,c456"
+#            readOnlyRootFilesystem: true
+          command: ["/spark-worker"]
+          ports:
+            - containerPort: 8081
+            - containerPort: 4040
+          resources:
+            requests:
+              cpu: 2000m
+              memory: "10Gi"
+          volumeMounts:
+          - name: spark-worker-mapr
+            mountPath: /mnt
+            readOnly: false
+#      securityContext:
+#        runAsUser: 1000
+#        fsGroup: 1000
+  volumeClaimTemplates:
+  - metadata:
+      name: spark-worker-mapr
+      namespace: default
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: sparksc
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-worker-headless
+spec:
+  clusterIP: None
+  selector:
+    component: spark-worker
+

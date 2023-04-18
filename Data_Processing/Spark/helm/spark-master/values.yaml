@@ -1,0 +1,15 @@
+sparkReplicas: 1
+image: sachin944/spark:9.0
+resources:
+  cpu: 1000m
+  memory: 10Gi
+  storage: 10Gi
+nodes:
+- wn01
+secrets:
+  maprUserSecret: "mapr-provisioner-secrets"
+  maprClusterSecret: "mapr-ticket-secret"
+restServers: "172.30.214.1:8443"
+cldbHosts: "172.30.214.1:7222"
+cluster: "hpe-epa-datapipeline.cluster.com"
+replication: 1
