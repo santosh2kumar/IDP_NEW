@@ -1,0 +1,52 @@
+{
+  "namespace": "fraud.avro",
+  "type": "record",
+  "name": "Transaction",
+  "fields": [
+    {
+      "name": "step",
+      "type": "int"
+    },
+    {
+      "name": "type",
+      "type": "string"
+    },
+    {
+      "name": "amount",
+      "type": "float"
+    },
+    {
+      "name": "nameOrig",
+      "type": "string"
+    },
+    {
+      "name": "oldBalanceOrig",
+      "type": "float"
+    },
+    {
+      "name": "newBalanceOrig",
+      "type": "float"
+    },
+    {
+      "name": "nameDest",
+      "type": "string"
+    },
+    {
+      "name": "oldBalanceDest",
+      "type": "float"
+    },
+    {
+      "name": "newBalanceDest",
+      "type": "float"
+    },
+    {
+      "name": "isFraud",
+      "type": "int"
+    },
+    {
+      "name": "isFlaggedFraud",
+      "type": "int"
+    }
+
+  ]
+}

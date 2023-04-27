@@ -1,0 +1,60 @@
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: fraud-kafka-producer-es
+  labels:
+    app: fraud-kafka-producer-es
+spec:
+  serviceName: fraud-kafka-producer-es-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      component: fraud-kafka-producer-es
+  template:
+    metadata:
+      labels:
+        component: fraud-kafka-producer-es
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+                - wn01
+      containers:
+        - name: kafka-producer
+          image: sachin944/fraud_analytics:producerV1
+          securityContext:
+            allowPrivilegeEscalation: false
+            seLinuxOptions:
+              level: "s0:c123,c456"
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 10Gi
+          volumeMounts:
+          - name: fraud-kafka-producer-mapr
+            mountPath: /mnt
+            readOnly: false
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      volumes:
+        - name: fraud-kafka-producer-mapr
+          persistentVolumeClaim:
+            claimName: fraud-producer-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fraud-kafka-producer-es-headless
+spec:
+  clusterIP: None
+  selector:
+    component: fraud-kafka-producer-es
+
