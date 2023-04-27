@@ -1,0 +1,62 @@
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: fraud-kafka-consumer-es
+  labels:
+    app: fraud-kafka-consumer-es
+spec:
+  serviceName: fraud-kafka-consumer-es-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      component: fraud-kafka-consumer-es
+  template:
+    metadata:
+      labels:
+        component: fraud-kafka-consumer-es
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nodetype
+                operator: In
+                values:
+                - wn01
+                - wn02
+                - wn03
+      containers:
+        - name: fraud-kafka-consumer
+          image: sachin944/fraud_analytics:consumerV2
+          securityContext:
+            allowPrivilegeEscalation: false
+            seLinuxOptions:
+              level: "s0:c123,c456"
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 10Gi
+          volumeMounts:
+          - name: fraud-kafka-consumer-mapr
+            mountPath: /mnt
+            readOnly: false
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      volumes:
+        - name: fraud-kafka-consumer-mapr
+          persistentVolumeClaim:
+            claimName: fraud-consumer-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fraud-kafka-consumer-es-headless
+spec:
+  clusterIP: None
+  selector:
+    component: fraud-kafka-consumer-es
+

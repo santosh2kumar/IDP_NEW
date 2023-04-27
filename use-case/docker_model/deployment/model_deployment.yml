@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-detect
+spec:
+  selector:
+    matchLabels:
+      app: fraud-detect
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: fraud-detect
+    spec:
+     affinity:
+       nodeAffinity:
+         requiredDuringSchedulingIgnoredDuringExecution:
+           nodeSelectorTerms:
+           - matchExpressions:
+             - key: nodetype
+               operator: In
+               values:
+               - wn03
+               - wn02
+     containers:
+     - name: fraud-detect
+       image: sachin944/fraud_analytics:V3
+       imagePullPolicy: IfNotPresent
+       resources:
+         requests:
+           cpu: 1000m
+           memory: 10Gi
+       securityContext:
+         allowPrivilegeEscalation: false
+         seLinuxOptions:
+           level: "s0:c123,c456"
+#         readOnlyRootFilesystem: true
+       ports:
+       - containerPort: 8080
+       - containerPort: 5000
+     securityContext:
+       runAsUser: 1000
+       fsGroup: 1000
+

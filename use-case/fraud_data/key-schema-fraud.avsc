@@ -1,0 +1,11 @@
+{
+  "namespace": "fraud.avro",
+  "type": "record",
+  "name": "Transaction",
+  "fields": [
+    {
+      "name": "transaction_cnt",
+      "type": "int"
+    }
+  ]
+}

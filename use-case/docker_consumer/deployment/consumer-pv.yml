@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fraud-consumervol
+  labels:
+    name: fraud-consumervol
+spec:
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: fraud-consumersc
+  capacity:
+    storage: 5Gi
+  csi:
+    nodePublishSecretRef:
+      name: "mapr-ticket-secret"
+      namespace: "default"
+    driver: com.mapr.csi-kdf
+    volumeHandle: fraud-consumervol
+    volumeAttributes:
+      volumePath: "/kafka_consumer"
+      cluster: "datapipeline-ecp.cluster.com"
+      cldbHosts: "172.30.203.1,172.30.203.2,172.30.203.3"
+      securityType: "secure"
+      platinum: "false"
+      replication: "1"
+

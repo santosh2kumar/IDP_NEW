@@ -1,0 +1,3 @@
+.es('Fraud_Prediction:"Genuine"', index=transactions, timefield=recorded_datetime)
+
+.es('Fraud_Prediction:"Fraud"', index=transactions, timefield=recorded_datetime)
