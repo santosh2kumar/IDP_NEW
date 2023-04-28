@@ -1,0 +1,24 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: es-data-sc
+  namespace: default
+provisioner: com.mapr.csi-kdf
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+parameters:
+    csiProvisionerSecretName: "{{ .Values.secrets.maprUserSecret }}"
+    csiProvisionerSecretNamespace: "default"
+    csiNodePublishSecretName: "{{ .Values.secrets.maprClusterSecret }}"
+    csiNodePublishSecretNamespace: "default"
+    restServers: "{{ .Values.restServers }}"
+    cldbHosts: "{{ .Values.cldbHosts }}"
+    cluster: "{{ .Values.cluster }}"
+    securityType: "secure"
+    namePrefix: "mapr-csi-pv"
+    mountPrefix: "/es-data"
+    advisoryquota: "100M"
+    trackMemory: "false"
+    logLevel: "error"
+    retainLogs: "false"
+    replication: "{{ .Values.replication }}"

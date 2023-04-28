@@ -1,0 +1,11 @@
+replicas: 2
+image: quay.io/pires/docker-elasticsearch-kubernetes:6.3.2
+resources:
+  cpu: 1000m
+  memory: 15Gi
+  storage: 15Gi
+nodes:
+- wn01
+- wn02
+- wn03
+

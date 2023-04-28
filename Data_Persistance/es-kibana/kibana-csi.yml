@@ -1,0 +1,25 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: kibana-sc
+  namespace: default
+provisioner: com.mapr.csi-kdf
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+parameters:
+    csiProvisionerSecretName: "mapr-provisioner-secrets"
+    csiProvisionerSecretNamespace: "default"
+    csiNodePublishSecretName: "mapr-ticket-secret"
+    csiNodePublishSecretNamespace: "default"
+    restServers: "172.30.203.1:8443"
+    cldbHosts: "172.30.203.1:7222"
+    cluster: "datapipeline-ecp.cluster.com"
+    securityType: "secure"
+    namePrefix: "csi-kibana"
+    mountPrefix: "/kibana"
+    advisoryquota: "100M"
+    trackMemory: "false"
+    logLevel: "error"
+    retainLogs: "false"
+    replication: "1"
+
